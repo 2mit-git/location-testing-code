@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Australia Address Autocomplete (Geoapify + Debounce)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+    }
+    input {
+      padding: 10px;
+      width: 400px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+    }
+    #results {
+      border: 1px solid #ccc;
+      max-width: 400px;
+      margin-top: 5px;
+    }
+    #results div {
+      padding: 8px;
+      cursor: pointer;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #results div:hover {
+      background-color: #f0f0f0;
+    }
+    .pin {
+      color: #4285F4;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <h3>Australia Address Autocomplete</h3>
+  <input type="text" id="search" placeholder="Start typing address..." oninput="debouncedSearch()" autocomplete="off" />
+  <div id="results"></div>
+
+  <script>
+    const API_KEY = '5e98dc856d0942e9993f939d68e0c9d7'; // Your Geoapify API key
+    let debounceTimer;
+
+    function debouncedSearch() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const query = document.getElementById('search').value;
+        searchAddress(query);
+      }, 300); // 300ms debounce time
+    }
+
+    async function searchAddress(query) {
+      if (query.length < 2) {
+        document.getElementById('results').innerHTML = '';
+        return;
+      }
+
+      const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&lang=en&limit=5&filter=countrycode:au&apiKey=${API_KEY}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        let resultHTML = '';
+        data.features.forEach(place => {
+          const address = place.properties.formatted;
+          resultHTML += `
+            <div onclick="selectAddress('${address.replace(/'/g, "\\'")}')">
+              <span class="pin">📍</span> ${address}
+            </div>`;
+        });
+
+        document.getElementById('results').innerHTML = resultHTML;
+      } catch (error) {
+        console.error('Error fetching address:', error);
+      }
+    }
+
+    function selectAddress(address) {
+      document.getElementById('search').value = address;
+      document.getElementById('results').innerHTML = '';
+    }
+  </script>
+
+</body>
+</html>
